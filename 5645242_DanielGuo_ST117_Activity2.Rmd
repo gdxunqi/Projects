@@ -1,0 +1,52 @@
+---
+title: "Activity 2"
+author: "5645242 Daniel Guo"
+date: "2025-02-28"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 2.
+
+```{r}
+# Import the insurance dataset
+Insurance <- read.csv(
+  "/Users/danielguo/Desktop/University/Year 1/ST117/Activity 2/insurance.csv", 
+  sep = ",")
+#print the first few rows
+head(Insurance)
+```
+
+
+## 3. Make a scatterplot of two variables: BMI against charges
+
+```{r}
+plot(Insurance$age, Insurance$charges,
+     main = "Scatter Plot of Age vs Insurance Charges",
+     xlab = "Age",
+     ylab = "Insurance Charges",
+     col = "pink",
+     pch = 16)  # point shape
+
+# Trend line
+abline(lm(charges ~ bmi, data = Insurance), col = "red", lwd = 2)
+```
+
+## 4.
+
+Trends and Observations:
+
+Positive Relationship between age and insuance charges as the red trend line is upward sloping, indicating that as age increases, insurance charges also tend to increase, suggesting that older individuals generally have higher insurance costs.
+
+There is a wide range of charges for each age group. Some individuals, at all ages have very high charges, possibly due to medical conditions, bmi, societal status, or other factors.
+
+Possible Reasons for the Trend: 
+
+Older individuals tend to have higher medical risks, leading to increased insurance costs.
+
+Factors like BMI, smoking status, and medical factors might explain the variations.
+
+Different individuals may have different types of insurance plans, due to their wealth, conditions and status etc., which could influence costs.

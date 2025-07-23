@@ -1,0 +1,680 @@
+---
+title: "ST117 E1"
+author: "Homework Lab Group 003 Pod E"
+date: "2025-01-23"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# This submission was created by:
+
+1.  Daniel Guo, Warwick ID: 5645242, Question: A: 1-5,6A,7-9, B:2
+2.  Zhijian Lin, Warwick ID: 5655296, Question: A: 1-4,6-9
+3.  Tom O'Connell, Warwick ID: 5628105 , Question: A: 1-3, 4A, 9C, B:2-3
+4.  Qinling Si, Warwick ID: 5614637, Question: A: 1-3,9, B: 1-3
+
+# Question A:
+
+## 1. Cohort and lab groups
+
+```{r}
+library(randomNames)
+set.seed(21012024)
+
+first_names <- randomNames(273, which.names = "first")
+last_names <- randomNames(273, which.names = "last")
+
+lab_groups <- c(rep(1:13, each = 18), rep(14, 19), rep(15, 20))
+
+grade_book <- data.frame(
+  First_Name = first_names,
+  Last_Name = last_names,
+  Lab_Group = lab_groups
+)
+
+head(grade_book)
+```
+
+## 2. Activities
+
+```{r}
+participants_A0 <- sample(1:273, 230)
+grade_book$Participated_A0 <- ifelse(1:273 %in% participants_A0, "Yes", "No")
+grade_book$Marks_A0 <- ifelse(grade_book$Participated_A0 == "Yes", 1, 0)
+
+additional_A1 <- sample(setdiff(1:273, participants_A0), 25)
+participants_A1 <- unique(c(participants_A0, additional_A1))
+grade_book$Participated_A1 <- ifelse(1:273 %in% participants_A1, "Yes", "No")
+grade_book$Marks_A1 <- ifelse(grade_book$Participated_A1 == "Yes", 1, 0)
+
+additional_A2 <- sample(setdiff(1:273, participants_A0), 25)
+participants_A2 <- unique(c(participants_A0, additional_A2))
+grade_book$Participated_A2 <- ifelse(1:273 %in% participants_A2, "Yes", "No")
+grade_book$Marks_A2 <- ifelse(grade_book$Participated_A2 == "Yes", 1, 0)
+
+participation_counts <- colSums(grade_book[, c("Marks_A0", "Marks_A1", "Marks_A2")])
+barplot(participation_counts, 
+        main = "Number of participants for A0, A1, and A2", 
+        xlab = "Activities", 
+        ylab = "Number of Participants", 
+        col = c("lightblue", "pink", "beige"),
+        names.arg = c("Activity 0 (A0)", "Activity 1 (A1)", "Activity 2 (A2)"))
+
+grade_book$Marks_A0 <- NULL
+head(grade_book)
+
+```
+
+## 3. Quizzes
+
+## 3.(a)
+
+```{r}
+set.seed(129642169)
+grade_book$Marks_Q1 <- ifelse(
+  grade_book$Participated_A0 == "Yes",
+  round(rbeta(sum(grade_book$Participated_A0 == "Yes"),4,2),2), 
+  round(rbeta(sum(grade_book$Participated_A0 == "No"),2,2),2))
+grade_book$Marks_Q2 <- ifelse(
+  grade_book$Participated_A2 == "Yes",
+  round(rbeta(sum(grade_book$Participated_A2 == "Yes"),4,2),2), 
+  round(rbeta(sum(grade_book$Participated_A2 == "No"),2,6),2))
+head(grade_book)
+```
+
+
+## 3.(b) 
+
+
+Reason for choosing the beta distribution
+
+1. Beta distribution is defined on the interval [0,1], so that it is suitable to represent percentage of scores for a quiz or exercise.
+
+2. Beta distribution is easy to adjust the skewness simply by changing the parameters, making it easier to reflect the performance on a quiz or exercise. 
+
+3. Parameters $\alpha$ and $\beta$ can represent the overall performance of a quiz, where a larger $\alpha$ value indicates better overall performance and a larger $\beta$ value indicates worse overall performance.
+
+
+Rationale for using different parameters depending on the participation the activities.
+
+1. Different parameters can indicate different performance level as mentioned previously. Therefore, it can reflect the difference in preparedness of students who participated in the activities and those who did not. Since the one who participated would be more prepared for the quiz than those who did not, which would suggest a better overall performance, reflecting the skewness of the beta distribution due to different parameters (a larger $\alpha$ value indicates better overall performance and a larger $\beta$ value indicates worse overall performance).
+
+
+## 3.(c)
+
+```{r}
+hist(grade_book$Marks_Q1, 
+     main = "Histogram of Q1 Scores (Whole Cohort)", 
+     col = "pink", 
+     border = "white",
+     xlab = "Q1 Scores",
+     ylim=c(0,60))
+
+boxplot(
+  Marks_Q1 ~ Participated_A0, 
+  data = grade_book, 
+  main = "Boxplot of Q1 Scores depending on Activity 0 Participation", 
+  xlab = "Participation in Activity 0", 
+  ylab = "Q1 Score", 
+  col = c("brown", "beige"), 
+  ylim = c(0, 1)
+)
+```
+
+Observations from the Plots
+
+1. The histogram shows the overall distribution of Q1 scores for the entire cohort, which is negatively skewed, with a mode between 0.8 to 0.9.
+
+2. From the boxplots, students who participated in A0 have a higher median Q1 score, a smaller interquartile range, suggesting the ones who participated in A0 have more consistent performance.
+
+3. From the boxplots, students who did not participate in A0 have a lower minimum value and median value, potentially due to lack of preparedness and experience compared the ones who attended A0
+
+
+
+## 4. Assign Homework Pods
+
+## 4.(a)
+
+```{r}
+LG13<-rep(LETTERS[1:6], each = 3)
+LG14<-rep(LETTERS[1:6],c(4,3,3,3,3,3))
+LG15<-rep(LETTERS[1:6],c(4,4,3,3,3,3))
+
+for (i in 1:13) {
+  grade_book$Homework_Pods[grade_book$Lab_Group == i] <- sample(LG13, replace = FALSE)
+}
+grade_book$Homework_Pods[grade_book$Lab_Group == 14] <- sample(LG14,replace=FALSE)
+grade_book$Homework_Pods[grade_book$LabG_roup == 15] <- sample(LG15,replace=FALSE)
+
+grade_book$Pod_ID <-paste(grade_book$Lab_Group, grade_book$Homework_Pod)
+head(grade_book)
+```
+
+## 4.(b)
+
+## When $N mod 3=0$ :
+
+1. The total number of permutations of N students is $N!$, when $N \geq 1$ and $N mod 3=0$
+
+2. Divide by the internal order within the pods is $(3!)^\frac{N}{3}$ where $3!$ is the order within each group and $\frac{N}{3}$ is the number of groups
+
+3. Divide by the order of the pods is $(\frac{N}{3})!$
+
+Therefore, the total number of ways $=\frac{N!}{(3!)^\frac{N}{3}\times(\frac{N}{3})!}$ when $N \geq 1$ and $N mod 3=0$
+
+## When $N mod 3=1$ :
+
+One Pod has 4 students, and the rest have 3:
+
+1. Choose 4 students out of N to form the size-4 Pod: $\binom{N}{4}$
+
+2. Similar to when $N mod 3=0$, we assign the remaining $N-4$ students into $\frac{N-4}{3}$ pods with three students in each: $\frac{(N-4)!}{(3!)^\frac{N-4}{3}\times(\frac{N-1}{3})!}$
+
+Therefore, the total number of ways $=\binom{N}{4}\times\frac{(N-4)!}{(3!)^\frac{N-4}{3}\times(\frac{N-1}{3})!}$ when $N \geq 1$ and $N mod 3=1$
+
+## When $N mod 3=2$ :
+
+Two Pods have 4 students, and the rest have 3:
+
+1. Choose 4 students out of N for the first Pod with 4 students: $\binom{N}{4}$
+
+2. Choose 4 students out of the remaining $N-4$ for the second Pod with 4 students: $\binom{N-4}{4}$
+
+3. Assign the remaining $N-8$ students into $\frac{N-8}{3}$ pods with three students in each: $\frac{(N-8)!}{(3!)^\frac{N-8}{3}\times(\frac{N-2}{3})!}$
+
+4. Ways to assign the order of the two 4 students pods: $2!$
+
+Therefore, the total number of ways $=\binom{N}{4}\times\binom{N-4}{4}\times\frac{(N-8)!}{(3!)^\frac{N-8}{3}\times(\frac{N-2}{3})!\times2!}$ when $N \geq 1$ and $N mod 3=2$
+
+## When $N=18$ :
+
+The total number of ways $$=\frac{18!}{(3!)^\frac{18}{3}\times(\frac{18}{3})!}$$
+
+$$=\frac{18!}{(3!)^6\times6!}==\frac{18!}{6^6\times6!}=190590400$$
+
+## When $N=19$ :
+
+The total number of ways $$=\binom{19}{4}\times\frac{(19-4)!}{(3!)^\frac{19-4}{3}\times(\frac{19-1}{3})!}$$
+
+$$=\binom{19}{4}\times\frac{15!}{6^5\times6!}=905304400$$
+
+## When $N=20$ :
+
+The total number of ways $$=\binom{20}{4}\times\binom{20-4}{4}\times\frac{(20-8)!}{(3!)^\frac{20-8}{3}\times(\frac{20-1}{3})!}$$
+$$=\binom{20}{4}\times\binom{16}{4}\times\frac{12!}{6^4\times6!}=4526522000$$
+
+## 4.(c)
+
+```{r}
+Possible_pods_allocation<-function(N) {
+  if (N %% 3 == 0) {
+    k <- N / 3
+    return(factorial(N)/(factorial(3))^k/factorial(k))
+  }
+  
+  if (N %% 3 == 1) {
+    k <- (N - 4) / 3
+    return(choose(N, 4)*factorial(N - 4)/factorial(3)^k/factorial(k+1))
+  }
+  
+  if (N %% 3 == 2) {
+    k <- (N - 8) / 3
+    return(
+      choose(N, 4)*choose(N - 4, 4)*factorial(N - 8)/factorial(3)^k/factorial(k+2))
+  }
+}
+
+Possible_pods_allocation(18) #N = 18
+Possible_pods_allocation(19) #N = 19
+Possible_pods_allocation(20) #N = 20
+```
+
+## 5. Exercise Sets
+
+## 5.(a)
+
+```{r}
+set.seed(129642169)
+pod_scores <- unique(grade_book$Pod_ID)
+pod_scores_df <- data.frame(
+  Pod_ID = pod_scores,
+  E1_Score = round(rbeta(length(pod_scores), 4, 3), 2), 
+  E2_Score = round(rbeta(length(pod_scores), 4, 3), 2),
+  E3_Score = round(rbeta(length(pod_scores), 4, 3), 2)
+)
+
+grade_book <- merge(grade_book, pod_scores_df, by = "Pod_ID")
+head(grade_book)
+```
+
+```{r}
+hist(
+  grade_book$E1_Score,
+  breaks = 20,               # Number of breaks
+  col = "lightblue",         # Colour for the bars
+  border = "white",       # Color for the border
+  main = "Histogram of Exercise Set 1 Scores",  # Title
+  xlab = "Exercise Ser 1 Scores",        # X-axis label
+  ylab = "Frequency",        # Y-axis label
+  xlim = c(0, 1),             # Limit for x-axis
+  ylim = c(0,50)           # Limit for y-axis
+)
+```
+
+## 5.(b)
+
+```{r}
+pairs(
+  grade_book[ , c("E1_Score", "E2_Score", "E3_Score")],
+  main = "Pairwise Scatter Plots of E1, E2, and E3",
+  pch = 16,
+  col = "maroon",
+  labels = c("E1 Scores", "E2 Scores", "E3 Scores")
+)
+```
+
+Observation: 
+1. Since they are independently sampled from the Beta distributions, the scatter plots show no strong correlation between the scores of E1 E2 E3.
+
+
+
+## 6. Assign Report Pods
+
+## 6.(a)
+
+```{r}
+set.seed(129642169)
+lab_20_students <- which(grade_book$Lab_Group == 15)  # Find students in the lab with 20 students
+dropout_student <- sample(lab_20_students, 1)             # Randomly choose one student to drop
+grade_book <- grade_book[-dropout_student, ]              # Remove the dropped student
+
+# Randomly assign remaining students to Report Pods
+remaining_students <- nrow(grade_book)
+number_pods <- 68
+pod_size <- 4
+
+# Shuffle student indices and assign Report Pods
+shuffle <- sample(1:remaining_students)
+report_pods <- rep(1:number_pods, each = pod_size)  # Assign 4 students per pod
+report_pods <- report_pods[1:remaining_students]
+grade_book$Report_Pod <- paste("Pod", report_pods[shuffle])  # Assign pods to students
+
+head(grade_book)
+```
+
+## 6.(b)
+
+2. Using the multinomial coefficient: with $273-1=272$ students divided into 68 groups of 4 students each:
+The number of ways of this assignments $$=\frac{272!}{(4!)^{68}\times68!}$$
+- $272!$ represents the total number of ways to arrange all students.
+- $(4!)^{68}$ represents the order arrangements of 4 students  within each of the 68 pods.
+- $68!$ represents the order arrangements of the 68 pods.
+
+## 6.(c) 
+
+Consider one student, he is already in a report pod, so there are 3 remaining seats, so that $\binom{272}{3}$ represent all possibilities. 
+
+If no fellow student is from his homework pod, they come from other 269 students, so it is $\binom{269}{3}$
+
+Probability that this student meet his fellow is $P=1-\binom{269}{3}/\binom{272}{3}$
+
+There are 18 students with same situations, so expected number $=18\times P$
+
+Expected_number$=18\times(1-\binom{269}{3}/\binom{272}{3})$
+
+## 7. Exercise Sets
+
+## 7.(a)
+
+```{r}
+set.seed(129642169)
+grade_book$Log_Participation <- rbinom(nrow(grade_book), 6, 0.8)
+grade_book$Passed_Logs <- round(grade_book$Log_Participation/6, 2)
+head(grade_book)
+```
+
+## 7.(b)
+
+```{r}
+grade_book$Participated_Draft <- ifelse(grade_book$Log_Participation >= 3, "Yes", "No")
+grade_book$Mark_Draft <- ifelse(grade_book$Participated_Draft == "Yes", 1, 0)
+grade_book$Participated_Draft <- NULL
+head(grade_book)
+```
+
+## 8. Final Report
+
+```{r}
+set.seed(129642169)
+unique_pods <- unique(grade_book$Report_Pod)
+
+# Vector to store WR marks for each pod
+WR_pod_marks <- numeric(length(unique_pods))
+
+# Assign WR marks
+for (i in seq_along(unique_pods)) {
+  # Get the students in the current Report Pod
+  pod_students <- grade_book$Report_Pod == unique_pods[i]
+  
+  # Check if all students in the pod submitted their draft reports
+  all_submitted <- all(grade_book$Mark_Draft[pod_students] == 1)
+  
+  # Assign WR marks based on submission status
+  WR_pod_marks[i] <- if (all_submitted) {
+    round(rbeta(1, 5, 2),2)  # Beta(5, 2) if all members submitted
+  } else {
+    round(rbeta(1, 3, 2),2)  # Beta(3, 2) otherwise
+  }
+}
+
+# Match the WR marks to each student in the Grade Book
+grade_book$WR_Marks <- WR_pod_marks[match(grade_book$Report_Pod, unique_pods)]
+
+# View the updated Grade Book
+head(grade_book)
+```
+
+## 9.  Module Mark
+
+## 9.(a)
+
+```{r}
+grade_book$MM <- with(grade_book, {
+  # Best 4 scores from Q1, Q2, E1, E2, E3 (60%)
+  best_4_scores <- apply(cbind(Marks_Q1, Marks_Q2, E1_Score, E2_Score, E3_Score), 1, function(x) 
+    {mean(sort(x, decreasing = TRUE)[1:4])  # Average of the best 4 scores
+  })
+  
+  # Final MM calculation
+  final_mark <- 0.6*best_4_scores+0.02*(Marks_A1+Marks_A2)+0.01*Log_Participation+0.3*WR_Marks
+  final_mark*100 #percentage
+})
+
+head(grade_book)
+
+first_few_mm <- head(grade_book$MM)
+student_names <- head(grade_book$First_Name)
+
+# Plot MM for the first few students
+barplot(
+  first_few_mm,
+  names.arg = student_names,
+  main="MM for the First Few Students",
+  xlab ="Student ID",
+  ylab = "MM (Percentage)",
+  col= "skyblue",
+  border ="black",
+  ylim= c(0,100)
+)
+```
+
+## 9.(b)
+
+```{r}
+mean(grade_book$MM)
+sd(grade_book$MM)
+summary(grade_book$MM)
+```
+
+## 9.(c)
+
+```{r}
+set.seed(129642169)
+simulate_grade_book <- function() {
+  num_students <- 273
+  grade_book <- data.frame(
+    StudentID= 1:num_students,
+    Marks_Q1= rbeta(num_students, 4, 2),
+    Marks_Q2= rbeta(num_students, 4, 2),
+    E1= rbeta(num_students, 4, 3),
+    E2= rbeta(num_students, 4, 3),
+    E3= rbeta(num_students, 4, 3),
+    Marks_A1= rbinom(num_students, 1, 0.8),
+    Marks_A2= rbinom(num_students, 1, 0.8),
+    Log_Participation = rbinom(num_students, 6, 0.8),
+    WR_Marks = ifelse(
+      rbinom(num_students, 1, 0.9) == 1,
+      rbeta(num_students, 5, 2),
+      rbeta(num_students, 3, 2)
+    )
+  )
+  grade_book$MM <- with(grade_book, {
+  # calculate MM
+  best_4_scores <- apply(cbind(Marks_Q1, Marks_Q2, E1, E2, E3), 1, function(x) 
+    {mean(sort(x, decreasing = TRUE)[1:4])  
+  })
+  final_mark <- 0.6*best_4_scores+0.02*(Marks_A1+Marks_A2)+0.01*Log_Participation+0.3*WR_Marks
+  final_mark*100
+  })
+  # Summary of MM
+  summary_stats <- summary(grade_book$MM)
+  return(list(mean = mean(grade_book$MM), 
+              sd= sd(grade_book$MM),
+              min= summary_stats[1], 
+              q1 = summary_stats[2], 
+              median= summary_stats[3], 
+              q3 = summary_stats[4], 
+              max= summary_stats[5]))
+}
+
+#Run the simulation 10 times and store results
+results <- data.frame(mean= numeric(10), 
+                      sd= numeric(10), 
+                      min= numeric(10), 
+                      q1 = numeric(10), 
+                      median= numeric(10), 
+                      q3= numeric(10), 
+                      max = numeric(10))
+
+for (i in 1:10) {
+  result <- simulate_grade_book()
+  results$mean[i] <- result$mean
+  results$sd[i] <- result$sd
+  results$min[i] <- result$min
+  results$q1[i] <- result$q1
+  results$median[i] <- result$median
+  results$q3[i] <- result$q3
+  results$max[i] <- result$max
+}
+
+# Print the results of 10 simulations
+print(results)
+
+# Calculate the SD of the mean
+sd_mean <- sd(results$mean)
+print(paste("Standard Deviation of the 10 simulations Mean:", sd_mean))
+```
+
+# Question B
+
+## 1(a)
+
+```{r}
+print("name of distribution:binomial distribution")
+print("X~Bin(13,0.5)")
+n<-13
+p_0<-0.5
+expected_value<-p_0*n
+variance<-n*p_0*(1-p_0)
+SD<-sqrt(variance)
+cat("expected value is:",expected_value,"\n")
+cat("variance is:",variance,"\n")
+cat("standard deviation is:",SD,"\n")
+```
+
+## 1(b)
+
+```{r}
+n<-13
+p_0<-0.5
+probability_at_least_7 <- 1 - pbinom(6, size = n, prob = p_0)
+cat("the probability that student i0 answers at least 7 is:",probability_at_least_7,"\n")
+```
+
+## 1(c)
+
+```{r}
+# i)exact
+n<-13
+p_0<-0.5
+k<-0:n
+exact_probability<-dbinom(k,size = n,prob = p_0)
+cat("exact value is:",exact_probability,"\n")
+# ii)normal distribution
+sigma<-sqrt(variance)
+normal_probability <- dnorm(k, mean =expected_value , sd = sigma)
+cat("the normal approximation is:",normal_probability,"\n")
+# iii)normal approximation with continuity correction
+normal_probability_continuity_correction<-pnorm(k + 0.5, mean = expected_value, sd = sigma) - pnorm(k- 0.5, mean = expected_value, sd = sigma)
+cat("the normal approximation with continuity correction is:",normal_probability_continuity_correction,"\n")
+results <- data.frame(k = k,Exact = exact_probability,Normal = normal_probability,normal_probability_continuity_correction = normal_probability_continuity_correction)
+print(results)
+```
+
+## 1(d)
+
+```{r}
+plot(k, exact_probability, type = "b", col = "blue", pch = 19, xlab = "k", ylim=c(0,0.3),
+     ylab = "Probability", main = "Comparison of Methods")
+lines(k, normal_probability, type = "b", col = "red", pch = 17)
+lines(k, normal_probability_continuity_correction, type = "b", col = "green", pch = 15)
+legend("topright", legend = c("Exact", "Normal", "Normal (CC)"), 
+       col = c("blue", "red", "green"), pch = c(19, 17, 15))
+print("describe:`Exact values are standard.")
+print("`The normal distribution with continuity correction is closer to the exact value.")
+print("`The normal distribution deviation is more obvious")
+```
+
+## 2(a)
+
+```{r}
+n <- 13
+p_0<- c(0.05, 0.1, 0.3)
+k<-0:n
+results_all <- data.frame()
+for (p_0 in p_0) {
+  exact_probability <- dbinom(k, size = n, prob = p_0)
+  expected_value <- n * p_0
+  sigma <- sqrt(n * p_0 * (1 - p_0))
+  normal_probability <- dnorm(k, mean = expected_value, sd = sigma)
+  normal_probability_continuity_correction <- pnorm(k + 0.5,mean = expected_value, sd = sigma) - pnorm(k - 0.5, mean = expected_value, sd = sigma)
+  temp <- data.frame(
+    k = k,
+    p = rep(p_0, length(k)),
+    Exact = exact_probability,
+    Normal = normal_probability,
+    normal_probability_continuity_correction = normal_probability_continuity_correction
+  )
+  results_all <- rbind(results_all, temp)
+}
+results_all
+```
+
+## 2(b)
+
+```{r}
+n <- 13
+p_0<- c(0.05, 0.1, 0.3)
+k<-0:n
+results_another <- data.frame()
+for (p_0 in p_0){
+  lambda <- n * p_0
+  poisson_probability <- dpois(k, lambda = lambda)
+  expected_value <- n * p_0
+  sigma <- sqrt(n * p_0 * (1 - p_0))
+  normal_probability <- dnorm(k, mean = expected_value, sd = sigma)
+  normal_probability_continuity_correction <- pnorm(k + 0.5,mean = expected_value, sd = sigma) - pnorm(k - 0.5, mean = expected_value, sd = sigma)
+   temp <- data.frame(
+    k = k,
+    p = rep(p_0, length(k)),
+    Exact = exact_probability,
+    Normal = normal_probability,
+    normal_probability_continuity_correction = normal_probability_continuity_correction
+  )
+  results_another<- rbind(results_another,temp)
+}
+results_another
+#graph
+p_0<- c(0.05, 0.1, 0.3)
+for (p_0 in p_0){
+  lambda <- n * p_0
+  poisson_probability <- dpois(k, lambda = lambda)
+  expected_value <- n * p_0
+  sigma <- sqrt(n * p_0 * (1 - p_0))
+  normal_probability <- dnorm(k, mean = expected_value, sd = sigma)
+  normal_probability_continuity_correction <- pnorm(k + 0.5,mean = expected_value, sd = sigma) - pnorm(k - 0.5, mean = expected_value, sd = sigma)
+  plot(k, exact_probability, type = "b", pch = 19, col = "yellow", ylim = c(0, max(normal_probability)),xlab = "k", ylab = "Probability", main = paste("p =", p_0))
+  lines(k, poisson_probability, type = "b", pch = 17, col = "red")
+  lines(k, normal_probability, type = "b", pch = 15, col = "blue")
+  lines(k, normal_probability_continuity_correction, type = "b", pch = 18, col = "gray")
+}
+#compare
+print("Poisson distribution is approximately suitable for cases where p is small (e.g. p = 0.05, 0.1)")
+```
+
+## 3(a)
+
+```{r}
+#i)
+n<-13
+at_least<-7
+P_Xi <- function(p) {
+  sapply(p, function(prob) sum(dbinom(at_least:n, size = n, prob = prob)))
+}
+P_Zi <- integrate(function(p) P_Xi(p), lower = 0, upper = 1)$value
+cat("P(Z_i = 1):",P_Zi,"\n")
+#ii)
+set.seed(123321)
+n_students <- 273 
+n <- 13
+at_least <- 7
+p_i <- runif(n_students, min = 0, max = 1)
+X_i <- rbinom(n_students, size = n, prob = p_i)
+Z_i <- ifelse(X_i >= at_least, 1, 0)
+#histogram
+hist(X_i, breaks = seq(0,13,by=1), col = "lightblue", 
+     xlab = "X_i (0 = Did not reach 7, 1 = reach 7)", 
+     main = "Histogram of X_i",
+     ylim=c(0,50))
+axis(1, at=0:13, labels=0:13)
+
+#at least 8
+num_students_correct_8 <- sum(X_i >= 8)
+cat("Number of students who answered at least 8 questions correctly:", num_students_correct_8, "\n")
+```
+
+## 3(b)
+
+```{r}
+set.seed(123321)
+n_students <- 273 
+n <- 13
+at_least <- 7
+simulate_Zi <- function(alpha, beta) {
+  p_i <- rbeta(n_students, shape1 = alpha, shape2 = beta)
+  X_i <- rbinom(n_students, size = n, prob = p_i)
+  Z_i <- ifelse(X_i >= at_least, 1, 0)
+  return(Z_i)
+}
+hist(Z_i, breaks=20,col="blue",
+     xlab="Z_i",
+     main="Histogram of Z_i")
+Z_beta_0_5_0_5 <- simulate_Zi(0.5, 0.5)
+cat("Beta(0.5, 0.5):",mean(Z_beta_0_5_0_5),"\n")
+Z_beta_5_5 <- simulate_Zi(5, 5)
+cat("Beta(5, 5) :", mean(Z_beta_5_5), "\n")
+Z_beta_7_2 <- simulate_Zi(7, 2)
+cat("Beta(7, 2):", mean(Z_beta_7_2), "\n")
+#graph
+par(mfrow = c(2, 2))
+hist(Z_beta_0_5_0_5, breaks = 20 ,col = "lightyellow", 
+     main = "Beta(0.5, 0.5)", xlab = "Z_i")
+hist(Z_beta_5_5, breaks = 20, col = "lightblue", 
+     main = "Beta(5, 5)", xlab = "Z_i")
+hist(Z_beta_7_2, breaks = 20, col = "lightpink", 
+     main = "Beta(7, 2)", xlab = "Z_i")
+print("come up with the idea: Because the graph is most similar to a when alpha is equal to beta is equal to 5, we want the distribution to be optimal when alpha is equal to beta")
+```

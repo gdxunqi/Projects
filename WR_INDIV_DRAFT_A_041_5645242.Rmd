@@ -1,0 +1,144 @@
+---
+title: "ST117 Individual DRAFT Written Report - Task A"
+author: "My WARWICK ID 5645242 (Report Pod 041)"
+date: "2025-04-08" 
+geometry: "left=1cm,right=1cm,top=1cm,bottom=1cm"
+output:
+  pdf_document: default
+html_document: default
+---
+
+```{r setup, include=FALSE}
+#Code to setup packages should go here, for example
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(ggplot2)
+```
+
+# Setting up data frames before for phase 2 part A
+```{r}
+#Import the dataframes from phase 1
+df_stream_wide <- readRDS("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/df_stream_wide.rds")
+df_precipitation_wide <- readRDS("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/df_precipitation_wide.rds")
+df_soil_wide <- readRDS("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/df_soil_wide.rds")
+
+#Averaging the repeated sampling by the variable LCODE
+df_stream_avg <- df_stream_wide %>%
+  group_by(SDATE, SITECODE, LCODE) %>%
+  summarise(across(where(is.numeric), mean, na.rm = TRUE), .groups = "drop")
+
+#weighted averaging considering the sampling volume (VOLUME) by the variable RID
+df_soil_avg <- df_soil_wide %>%
+  group_by(SDATE, SITECODE, RID) %>%
+  summarise(across(where(is.numeric), ~ weighted.mean(., w = VOLUME, na.rm = TRUE)), .groups = "drop")
+
+#STAGE, VACUUM, and VOLUME are only contained in some of the datasets and may be dropped unless needed.
+df_stream_avg <- df_stream_avg %>% select(-STAGE)
+df_precipitation_wide <- df_precipitation_wide %>% select(-VOLUME)
+df_soil_avg <- df_soil_avg %>% select(-VACUUM, -VOLUME)
+
+#filter out the assigned data for our pod: 2002-2008: T02, T04, T06
+df_stream_Afiltered <- df_stream_avg %>%
+  filter(format(SDATE, "%Y") %in% 2002:2008,
+         SITECODE %in% c("T02", "T04", "T06"))
+df_precipitation_Afiltered <- df_precipitation_wide %>%
+  filter(format(SDATE, "%Y") %in% 2002:2008,
+         SITECODE %in% c("T02", "T04", "T06"))
+df_soil_Afiltered <- df_soil_avg %>%
+  filter(format(SDATE, "%Y") %in% 2002:2008,
+         SITECODE %in% c("T02", "T04", "T06"))
+
+```
+
+# Question 1
+
+# Question 2
+
+```{r}
+plot_and_find_differences <- function(sitecode, df, dataname = "data") {
+  # Filter for the selected site
+  df_site <- df %>%
+    filter(SITECODE == sitecode) %>%
+    ungroup() %>%
+    select(where(is.numeric))
+
+  #Pearson and Spearman correlation matrices
+  correlation_pearson <- suppressWarnings(round(cor(df_site, method = "pearson", use = "pairwise.complete.obs"), 2))
+  correlation_spearman <- suppressWarnings(round(cor(df_site, method = "spearman", use = "pairwise.complete.obs"), 2))
+
+  # Combine: Pearson upper triangle, Spearman lower triangle
+  correlation_combined <- correlation_pearson
+  correlation_combined[lower.tri(correlation_combined)] <- correlation_spearman[lower.tri(correlation_spearman)]
+
+  # Long format
+  correlation_long <- as.data.frame(as.table(correlation_combined)) %>%
+    rename(Variables1 = Var1, Variables2 = Var2, Correlation = Freq)
+
+  # plot
+  heatmap_plot <- ggplot(correlation_long, aes(Variables1, Variables2, fill = Correlation)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "darkblue", high = "maroon",
+                         midpoint = 0, limit = c(-1, 1), na.value = "grey69") +
+    geom_text(aes(label = ifelse(is.na(Correlation), "NA", round(Correlation, 2))), size = 2) + #adjusting to the font
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    labs(
+      title = paste("Correlation Heatmap for", sitecode, "in", dataname, "dataset (Pearson above, Spearman below)"),
+      x = "Chemical", y = "Chemical"
+    )
+   # identify large absolute differences bigger than 0,5
+  abs_diff <- abs(abs(correlation_pearson) - abs(correlation_spearman))
+  diff_table <- as.data.frame(as.table(abs_diff)) %>%
+    rename(Variables1 = Var1, Variables2 = Var2, AbsDiff = Freq) %>%
+    filter(AbsDiff > 0.5) %>%
+    mutate(Site = sitecode) %>%
+    arrange(desc(AbsDiff))
+
+  return(list(
+    plot = heatmap_plot,
+    differences_table = diff_table
+  ))
+}
+
+result_T02_stream <- plot_and_find_differences("T02", df_stream_Afiltered, "Stream Water")
+result_T04_stream <- plot_and_find_differences("T04", df_stream_Afiltered, "Stream Water")
+result_T06_stream <- plot_and_find_differences("T06", df_stream_Afiltered, "Stream Water")
+result_T02_precipitation <- plot_and_find_differences("T02", df_precipitation_Afiltered, "Precipitation")
+result_T04_precipitation <- plot_and_find_differences("T04", df_precipitation_Afiltered, "Precipitation")
+result_T06_precipitation <- plot_and_find_differences("T06", df_precipitation_Afiltered, "Precipitation")
+result_T02_soil <- plot_and_find_differences("T02", df_soil_Afiltered, "Soil Solution")
+result_T04_soil <- plot_and_find_differences("T04", df_soil_Afiltered, "Soil Solution")
+result_T06_soil <- plot_and_find_differences("T06", df_soil_Afiltered, "Soil Solution")
+
+
+# View the plot
+print(result_T02_stream$plot)
+print(result_T04_stream$plot)
+print(result_T06_stream$plot)
+print(result_T02_precipitation$plot)
+print(result_T04_precipitation$plot)
+print(result_T06_precipitation$plot)
+print(result_T02_soil$plot)
+print(result_T04_soil$plot)
+print(result_T06_soil$plot)
+
+
+```
+
+# Question 3
+
+```{r}
+# View the table of large differences bigger than 0.5 for all sites for each data:
+kable(result_T02_stream$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T02 for Stream Water data")
+kable(result_T04_stream$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T04 for Stream Water data")
+kable(result_T06_stream$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T06 for Stream Water data")
+kable(result_T02_precipitation$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T02 for Precipitation data")
+kable(result_T04_precipitation$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T04 for Precipitation data")
+kable(result_T06_precipitation$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T06 for Precipitation data")
+kable(result_T02_soil$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T02 for Soil Solution data")
+kable(result_T04_soil$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T04 for Soil Solution data")
+kable(result_T06_soil$differences_table, caption = "Large Pearson–Spearman Differences > 0.5 for T06 for Soil Solution data")
+```
+
+# Question 4
+

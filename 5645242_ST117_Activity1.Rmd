@@ -1,0 +1,130 @@
+---
+title: "Activity_1"
+author: "5645242_Daniel_Guo"
+date: "2025-02-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# 1
+
+https://www.kaggle.com/datasets/abdelrahmanemad594/premier-league-season-2024
+
+```{r}
+F1_2022 <- read.csv(
+  "/Users/danielguo/Desktop/University/Year 1/ST117/Activity 1/F1_2022_Data.csv", 
+  sep = ",")
+F1_2022
+```
+
+```{r}
+Constructor_colors <- c(
+  "Red Bull Racing RBPT" = "blue",
+  "Mercedes" = "grey",
+  "Ferrari" = "red",
+  "McLaren Mercedes" = "orange",
+  "Alpine Renault" = "pink",
+  "Aston Martin Aramco Mercedes" = "darkgreen",
+  "AlphaTauri RBPT" = "navy",
+  "Alfa Romeo Ferrari" = "maroon",
+  "Haas Ferrari" = "white",
+  "Williams Mercedes" = "lightblue"
+)
+
+barplot(F1_2022$Points, 
+        names.arg = F1_2022$Driver.Code, 
+        main = "F1 2022 Driver Points", 
+        xlab = "Drivers", 
+        ylab = "Points", 
+        col = Constructor_colors[F1_2022$Constructor],
+        las = 2,
+        border = "black",
+        ylim = c(0,500))
+```
+
+I wanted to show the number of points each driver won across the 2022 season, while having the bar chart in the colours of the constructors also reflects the number of points each constructors won across this season.
+
+Unlike a histogram, a bar chart is perfect for categorical data such as each driver.It clearly shows who won the 2022 season with the ranking of every drivers.
+
+Clearly, Max Verstappen	and its constructor won the 2022 season with a distant margin, followed by Leclerc and his constructor Ferrari. The top three constructors lead the rest of the pack by a very large margin, difference between Hamilton and Norris.
+
+# 2.
+
+https://www.kaggle.com/datasets/vivekattri/global-ev-charging-stations-dataset
+
+```{r}
+EV_Charging_Station <- read.csv(
+  "/Users/danielguo/Desktop/University/Year 1/ST117/Activity 1/detailed_ev_charging_stations.csv", 
+  sep = ",")
+head(EV_Charging_Station)
+```
+
+```{r}
+hist(EV_Charging_Station$Distance.to.City..km., 
+     main = "Histogram of Distance to City", 
+     xlab = "Distance (km)", 
+     col = "pink",
+     breaks = 10)
+
+barplot(table(EV_Charging_Station$Installation.Year), 
+        main = "Bar Plot of Installation Years", 
+        xlab = "Year", 
+        ylab = "Count", 
+        col = "lightcyan", 
+        border = "black",
+        ylim = c(0,400))
+
+maintenance_table <- table(EV_Charging_Station$Maintenance.Frequency)
+pie(maintenance_table, 
+    main = "Pie Chart of Maintenance Frequency", 
+    labels = paste(names(maintenance_table), "\n", maintenance_table))
+
+boxplot(EV_Charging_Station$Usage.Stats..avg.users.day. ~ EV_Charging_Station$Maintenance.Frequency, 
+        main = "Usage Per Day by Maintenance Frequency",
+        xlab = "Maintenance Frequency",
+        ylab = "Usage Per Day",
+        col = c("lightblue", "beige", "lightpink"),
+        border = "black")
+```
+
+# 3.
+
+## The written answer for the small data set is in section 1, under the first plot.
+
+## i.
+
+1. Distance to cities show the availability of the EV stations to citizens in suburban area, travelling between cities. A wide range of distance can be essential for the use of EV and can encourage more EV consumptions.
+
+2. Installation years show the year which the EV charging stations are installed, which could indicate the how recency and the quality of the charging stations.
+
+3. Maintenance frequency shows the operational reliability of EV stations.
+
+4. How usage per day may differ with different maintenance frequency. Further, box plot shows if most stations are used (if the median is high, many stations have high usage.) Further, a long lower whisker can show that some are under-utilised.
+
+
+## ii.
+
+1. Histogram works best for numerical ranges, like distances in km). It shows urban rural comparison by showing where charging stations are mostly located. Useful for policy decisions or expanding infrastructure in areas with less stations. It can detects outliers: if there are stations located extremely far from cities. 
+
+
+2. Unlike a histogram, a bar chart is perfect for categorical data like each year. It can show the trend over the years.
+
+3. Pie chart shows the proportion of each maintenance frequency, can show if most stations need frequent or rare maintenance.
+
+4. A series of box plot allows you to compare how the distribution of usage per day differs, including the median and max and min values, based on maintenance frequency. Median represents the middle value of charging station usage, a higher of which shows a higher use of the stations with the corresponding maintenance frequency.
+
+
+## iii.
+
+1. Relative similar number of stations at each distance except marginally less closser to the city, 0-2km. However, no data outside of 20km radius of the city, therefore more infrastructures may need to be planned in areas 20km outside of the cities.
+
+2. There is no trend of increase or decrease across the years, although several peaks in 2013, 2015, 2017, 2020, which is surprising because the increasing risks of climate change and increase encouragement of EV usage.
+
+3. Even spread of each Maintenance Frequency, which indicates that there is a relatively large proportion that are less maintenance, so that some of them may require more maintenance.
+
+4. Even whisker and no outlier, so that no stations are extremely under-utilised. Annually and Monthly have relatively similar box plot, while quarterly has a higher median, so that the stations has more use, which is unusual.
+

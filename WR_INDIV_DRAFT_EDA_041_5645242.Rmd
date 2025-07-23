@@ -1,0 +1,432 @@
+---
+title: "ST117 Individual DRAFT Written Report - Part EDA"
+author: "My WARWICK ID 5645242 (Report Pod 041)"
+date: "2025-04-08" 
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+#Code to setup packages should go here, for example:
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(ggplot2)
+library(lubridate)
+library(viridis)
+library(hrbrthemes)
+library(RColorBrewer)
+
+```
+
+# Step 5 Summary of aspects of the datasets that are most relevant for statistical analyses
+
+For all three datasets: As a quality check, a standard quality control solution is analysed alongside the collected samples. Multiple levels of quality control were applied: Quality Codes
+
+## Stream water chemistry data (1992-2015)
+
+### When, Where and How was the data collected
+
+Dip samples are collected weekly at designated ECN sites across the UK, representing different landscapes and ecosystems. (Including T02, T04, T05, T06, T07, T08, T11, T12). A clean 250 ml bottle is used, rinsed beforehand to avoid contamination. Conductivity and pH are measured on unfiltered water. Filtered samples are analysed for key ions, alkalinity, and dissolved organic carbon. Continuous monitoring of temperature, pH, conductivity, and turbidity is planned.
+
+### Why was the data collected
+
+Aims to detect changes in water quality caused by factors such as climate change, pollution, and land use. We can assess ecosystem health, acidification, and nutrient budgets.
+
+## Precipitation chemistry data (1992-2015)
+
+### When, Where and How was the data collected
+
+The data was collected weekly from T01 to T12 terrestrial ECN sites across the UK, including upland and lowland regions. Precipitation samples are collected using a continuously open bulk collector. The collector gathers both wet and dry deposition. At each collection, the bottle is replaced, and the funnel is cleaned/swapped with a clean one. Samples are measured and analysed for volume, pH, conductivity, and conc. of dissolved ions and potential contamination factors are recorded.
+
+### Why was the data collected
+
+The aim is to assess the impact of atmospheric pollutant on ecosystems. It support the detection of enviromental changes linked to pollution and contributes to researches on acid rain and atmospheric deposition which would help policy makinf.
+
+## Soil solution chemistry data (1992-2015)
+
+### When, Where and How was the data collected
+
+The samples are collected fortnightly from T01 to T12 terrestrial ECN sites across the UK, with different regions. The data is collected using suction lysimeters installed at two depths in the soil, shallow and deep. These samplers mimic plant roots and draw in soil water, which is later analysed for pH, conductivity, nutrients, dissolved ions etc.
+
+### Why was the data collected
+
+Aims to assess temporal changes in nutrient availability and soil chemistry. This helps in understanding its responsiveness to climate, pollution, or land use changes.
+
+# Step 6: Diagrams about data structure
+
+## Stream water
+
+```{r Stream water data diagram, out.width='80%'}
+knitr::include_graphics("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/Phase 1 Diagram/Stream_Water_Diagram.jpg")
+```
+
+## Precipitation
+
+```{r Precipitation data diagram, out.width='80%'}
+knitr::include_graphics("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/Phase 1 Diagram/Precipitation_Diagram.jpg")
+```
+
+## Soil solution
+
+```{r Soilsolution data diagram, out.width='80%'}
+knitr::include_graphics("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/Phase 1 Diagram/Soil_Solution_Diagram.jpg")
+```
+
+# Step 7: Data loading and preprocessing
+
+```{r Data loading and preparation}
+library(tidyverse)
+#read and create individual data frames for each chemistry data:
+df_stream <- read.csv("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/data/Stream water/ECN_WC1.csv") 
+df_precipitation <- read.csv("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/data/Precipitation/ECN_PC1.csv") 
+df_soil <- read.csv("/Users/danielguo/Desktop/University/Year 1/ST117/5645242_041_WR/data/Soil solution/ECN_SS1.csv") 
+
+#remove the irrelevant variable for this assignment for stream water data
+columns_to_remove_wc <- c("Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "COLOUR") 
+df_stream_wide <- df_stream %>%
+  pivot_wider(
+    names_from = FIELDNAME,
+    values_from = VALUE
+  ) %>%
+  select(-all_of(columns_to_remove_wc)) #converting the dataframe to a format showing them as separate columns.
+df_stream_wide <- df_stream_wide %>%
+  mutate(SDATE = dmy(SDATE)) #converting the date format for easier later use
+head(df_stream_wide) #print the first few rows
+
+#same process will be applied for the other two dataframes:
+columns_to_remove_pc <- c("Q1", "Q2", "Q3", "Q4", "Q5", "Q6", "COLOUR")
+df_precipitation_wide <- df_precipitation %>%
+  pivot_wider(
+    names_from = FIELDNAME,
+    values_from = VALUE
+  ) %>%
+  select(-all_of(columns_to_remove_pc))
+df_precipitation_wide <- df_precipitation_wide %>%
+  mutate(SDATE = dmy(SDATE))
+head(df_precipitation_wide)
+
+
+columns_to_remove_ss <- c("Q1", "Q2", "Q3", "Q4", "Q5", "COLOUR")
+df_soil_wide <- df_soil %>%
+  pivot_wider(
+    names_from = FIELDNAME,
+    values_from = VALUE
+  ) %>%
+  select(-all_of(columns_to_remove_ss))
+df_soil_wide <- df_soil_wide %>%
+  mutate(SDATE = dmy(SDATE))
+head(df_soil_wide)
+
+#save the dataframes to import in phase 2
+saveRDS(df_stream_wide, "df_stream_wide.rds")
+saveRDS(df_precipitation_wide, "df_precipitation_wide.rds")
+saveRDS(df_soil_wide, "df_soil_wide.rds")
+```
+
+# Step 8: DQA (Data Quality Analysis)
+
+## Check for Uniqueness
+
+```{r}
+# Check for uniqueness: find the number of duplicated rows
+sum(duplicated(df_stream_wide))
+sum(duplicated(df_precipitation_wide))
+sum(duplicated(df_soil_wide))
+```
+
+## Check for Timeliness
+
+```{r}
+# Check for timeliness: sample date range and frequency
+
+range(df_stream_wide$SDATE, na.rm = TRUE) #Finding the range for stream water sample dates
+range(df_precipitation_wide$SDATE, na.rm = TRUE) #Finding the range for precipitation sample dates
+range(df_soil_wide$SDATE, na.rm = TRUE) #Finding the range for soil solution sample dates
+
+df_stream_wide %>%
+  # Create a new column "Month" by extracting the year and month from the SDATE column
+  mutate(Month = format(SDATE, "%Y-%m")) %>%
+  # Count the number of records for each Month value
+  count(Month) %>%
+  # Create a line plot using ggplot2
+  ggplot(aes(x = as.Date(paste0(Month, "-01")), y = n)) +
+  # Plot the number of samples as a line over time
+  geom_line() +
+  #labels
+  labs(title = "Sampling Frequency Over Time for Stream Water Chemistry Data", x = "Time", y = "Number of Samples") 
+
+#Same process is used for the other two data frames
+df_precipitation_wide %>%
+  mutate(Month = format(SDATE, "%Y-%m")) %>%
+  count(Month) %>%
+  ggplot(aes(x = as.Date(paste0(Month, "-01")), y = n)) +
+  geom_line() +
+  labs(title = "Sampling Frequency Over Time for Precipitation Chemistry Data", x = "Time", y = "Number of Samples") 
+
+df_soil_wide %>%
+  mutate(Month = format(SDATE, "%Y-%m")) %>%
+  count(Month) %>%
+  ggplot(aes(x = as.Date(paste0(Month, "-01")), y = n)) +
+  geom_line() +
+  labs(title = "Sampling Frequency Over Time for Soil Solution Chemistry Data", x = "Time", y = "Number of Samples") 
+```
+
+## Check for Validity
+```{r}
+# Check for Validity: 
+#Check for dates before 1992 or after 2015 for all data frames
+df_stream_wide %>% 
+  filter(SDATE < as.Date("1992-01-01") | SDATE > as.Date("2015-12-31"))
+df_precipitation_wide %>% 
+  filter(SDATE < as.Date("1992-01-01") | SDATE > as.Date("2015-12-31"))
+df_soil_wide %>% 
+  filter(SDATE < as.Date("1992-01-01") | SDATE > as.Date("2015-12-31"))
+
+# Check for any pH values below 0 or above 14
+df_stream_wide %>% filter(PH < 0 | PH > 14)
+df_precipitation_wide %>% filter(PH < 0 | PH > 14)
+df_soil_wide %>% filter(PH < 0 | PH > 14)
+
+#Check for any negative units except Alkalinity
+df_stream_wide %>%
+  select(-ALKY) %>% # remove ALKY temporarily
+  filter(if_any(where(is.numeric), ~ . < 0))
+df_precipitation_wide %>%
+  select(-ALKY) %>% # remove ALKY temporarily
+  filter(if_any(where(is.numeric), ~ . < 0))
+df_soil_wide %>%
+  select(-ALKY) %>%    # remove ALKY temporarily
+  filter(if_any(where(is.numeric), ~ . < 0))
+```
+
+Note There exist a negative for the variable of magnesium in the precipitation data frame.
+
+## Check for Accuracy
+```{r}
+#Check for accuracy, use summary and compare to real life
+summary(df_stream_wide)
+summary(df_precipitation_wide)
+summary(df_soil_wide)
+```
+## Check for Completeness
+```{r}
+#Completness
+# Stream Water
+# Prepare the data for plotting
+df_stream_missing <- df_stream_wide %>%
+  select(SDATE, where(is.numeric), -LCODE) %>%   # Keep SDATE + numeric columns, remove LCODE
+  pivot_longer(-SDATE, names_to = "Variables", values_to = "Value") %>%
+  mutate(Missing = is.na(Value)) %>%
+  arrange(SDATE) %>%
+  mutate(Row = as.numeric(factor(SDATE, levels = unique(SDATE))))
+
+# Year break lines for visual clarity
+year_breaks_stream <- df_stream_missing %>%
+  distinct(SDATE, Row) %>%
+  mutate(Year = as.numeric(format(SDATE, "%Y"))) %>%
+  group_by(Year) %>%
+  summarise(Row = min(Row), .groups = "drop")
+
+# Plot
+ggplot(df_stream_missing, aes(x = Variables, y = Row, fill = Missing)) +
+  geom_tile(color = NA) +
+  scale_fill_manual(values = c("FALSE" = "grey69", "TRUE" = "black")) +
+  scale_y_reverse() +
+  geom_hline(data = year_breaks_stream, aes(yintercept = Row), color = "red", linewidth = 0.3) +
+  scale_y_continuous(
+    breaks = year_breaks_stream$Row + 10,  # adjust this based on your density
+    labels = year_breaks_stream$Year,
+    expand = c(0, 0)
+  ) +
+  labs(title = "Missing data heatmap: stream water over time",
+       x = "Variables", y = "Year", fill = "Missing")+
+  theme(axis.text.y = element_text(size = 8),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Same process is used for the other two data frames, copy pasted and changed the df labels
+# Precipitation
+df_precipitation_missing <- df_precipitation_wide %>%
+  select(SDATE, where(is.numeric)) %>%   
+  pivot_longer(-SDATE, names_to = "Variables", values_to = "Value") %>%
+  mutate(Missing = is.na(Value)) %>%
+  arrange(SDATE) %>%
+  mutate(Row = as.numeric(factor(SDATE, levels = unique(SDATE))))
+
+year_breaks_precipitation <- df_precipitation_missing %>%
+  distinct(SDATE, Row) %>%
+  mutate(Year = as.numeric(format(SDATE, "%Y"))) %>%
+  group_by(Year) %>%
+  summarise(Row = min(Row), .groups = "drop")
+
+ggplot(df_precipitation_missing, aes(x = Variables, y = Row, fill = Missing)) +
+  geom_tile(color = NA) +
+  scale_fill_manual(values = c("FALSE" = "grey69", "TRUE" = "black")) +
+  scale_y_reverse() +
+  geom_hline(data = year_breaks_precipitation, aes(yintercept = Row), color = "red", linewidth = 0.3) +
+  scale_y_continuous(
+    breaks = year_breaks_precipitation$Row + 10,
+    labels = year_breaks_precipitation$Year,
+    expand = c(0, 0)
+  ) +
+  labs(title = "Missing data heatmap:precipitation  over time",
+       x = "Variables", y = "Year", fill = "Missing")+
+  theme(axis.text.y = element_text(size = 8),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Soil Solution
+df_ss_missing <- df_soil_wide %>%
+  select(SDATE, where(is.numeric)) %>%
+  pivot_longer(-SDATE, names_to = "Variables", values_to = "Value") %>%
+  mutate(Missing = is.na(Value)) %>%
+  arrange(SDATE) %>%
+  mutate(Row = as.numeric(factor(SDATE, levels = unique(SDATE))))
+
+year_breaks_ss <- df_ss_missing %>%
+  distinct(SDATE, Row) %>%
+  mutate(Year = as.numeric(format(SDATE, "%Y"))) %>%
+  group_by(Year) %>%
+  summarise(Row = min(Row), .groups = "drop")
+
+ggplot(df_ss_missing, aes(x = Variables, y = Row, fill = Missing)) +
+  geom_tile(color = NA) +
+  scale_fill_manual(values = c("FALSE" = "grey80", "TRUE" = "black")) +
+  scale_y_reverse() +
+  geom_hline(data = year_breaks_ss, aes(yintercept = Row), color = "red", linewidth = 0.3) +
+  scale_y_continuous(
+    breaks = year_breaks_ss$Row + 10,
+    labels = year_breaks_ss$Year,
+    expand = c(0, 0)
+  ) +
+  labs(title = "Missing data heatmap: soil solution over time",
+       x = "Variables", y = "Year", fill = "Missing")+
+  theme(axis.text.y = element_text(size = 8),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## Stream water
+
+Example code chunk showing some initial steps. This is generic example code chunks using unrelated data to illustrate the richness of plotting functions in R and show how you can arrange figures on a page using par().
+
+Uniqueness: From the r code to check for the number of duplicated row, we can see that the dataframe has a uniqueness of 100%.
+
+Consistency: consistent
+
+Timeliness: The range is from the 6th of October 1992 to the 31st of December 2015.
+
+From the Sample Frequency plot, we note that we may have different no. weeks in a month, thus resulting the fluctuation. The frequency started low, though slowly increasing after 1993. However, the frequency started to decrease in late 2000s.
+
+Validity: Valid since no out of range value and false formatting was spotted.
+
+Accuracy: Accurate as it matches reality
+
+User needs and trade-offs: Policymakers may want long-term trends to help them make policies. Scientists may need long-term trends to study environmental change, which is critical with regards to climate change.
+
+Completeness: Overall, the data is not that complete, though there is more grey than black. Overall, the completeness varies across the the years and variables, with PHAQCS (Aquacheck system pH stirred), PHAQCU (Aquacheck system pH unstirred), and TOTALP (Total dissolved phosphorus) barely having any completion, while it became less complete since the middle of 2012. However, one variable that is almost complete is PH (pH)
+
+## Precipitation
+
+Uniqueness: From the r code to check for the number of duplicated row, we can see that the dataframe has a uniqueness of 100%.
+
+Consistency: consistent
+
+Timeliness: The range is from the 6th of October 1992 to the 31st of December 2015.
+
+From the Sample Frequency plot, we note that we may have different no. weeks in a month, thus resulting the fluctuation. The frequency started low, though slowly increasing after 1993. However, the frequency started to decrease after 2010.
+
+Validity: Less valid as there exist a negative (-0.32) for the variable of magnesium.
+
+Accuracy: Accurate as it matches reality
+
+User needs and trade-offs: Policymakers may want long-term trends to help them make policies. Scientists may need long-term trends to study environmental change, which is critical with regards to climate change.
+
+Completeness: The data is relatively less complete compared to the stream water data, though there is more grey than black. Overall, the completeness varies across the the years and variables: ALKY (Alkalinity), DOC (Dissolved organic carbon), PHAQCS (Aquacheck system pH stirred), PHAQCU (Aquacheck system pH unstirred), TOTALN (Total nitrogen) and TOTALP (Total dissolved phosphorus) are the variables with the completion, while it is less complete during the first few years of the data, 2003 and, 2013. However, two sets of variables are almost complete, which are: PH (pH) and VOLUME (Volume of sample collected)
+
+## Soil solution
+
+Uniqueness: From the r code to check for the number of duplicated row, we can see that the dataframe has a uniqueness of 100%.
+
+Consistency: consistent
+
+Timeliness: The range is from the 6th of October 1992 to the 23rd of December 2015, which is valid even though it ends earlier compared to the previous dataframes, since this is only sampled fortnightly.
+
+From the Sample Frequency plot, we note that we may have different no. weeks in a month, thus resulting the fluctuation. The frequency started low, though slowly increasing after 1995. However, the frequency started to decrease after 2010.
+
+Validity: Valid since no out of range value and false formatting was spotted.
+
+Accuracy: Accurate as it matches reality
+
+User needs and trade-offs: Policymakers may want long-term trends to help them make policies. Scientists may need long-term trends to study environmental change, which is critical with regards to climate change.
+
+Completeness: The data is way less complete in comparison to the previous two comparison, with more black (missing data) than grey (completed data). Overall, the completeness varies across the the years and variables: with PHAQCS (Aquacheck system pH stirred), PHAQCU (Aquacheck system pH unstirred), and TOTALP (Total dissolved phosphorus) barely having any completion, while it has little completion in the second half of 1990s, 2001, 2003, 2008 and 2014-2015. However, two sets of variables are almost complete, which are: VACUUM (Residual vacuum at time of sampling) and VOLUME (Volume of sample collected)
+
+# Step 9: Exploratory Data Analysis (EDA)
+
+## Stream water
+
+```{r}
+df_stream_wide %>%
+  select(where(is.numeric), -LCODE) %>%
+  summarise(across(everything(), list(
+    mean = ~mean(.x, na.rm = TRUE), #calculate mean excluding 
+    sd = ~sd(.x, na.rm = TRUE),
+    var = ~var(.x, na.rm = TRUE)
+), .names = "{.col}_{.fn}"))
+
+df_stream_tall <- df_stream_wide %>%
+  select(SDATE, where(is.numeric), -LCODE) %>%
+  pivot_longer(-SDATE, names_to = "Chemical_Variables", values_to = "Value")
+
+ggplot(df_stream_tall, aes(x = " ", y = Value)) +
+  geom_boxplot() +
+  facet_wrap(~ Chemical_Variables, scales = "free_y") +
+  labs(title = "Boxplots of Chemical Concentrations",
+       x = NULL, y = "Value")
+
+# Calculate the correlation matrix
+cormat_stream <- df_stream_wide %>%
+  select(where(is.numeric), -LCODE) %>%
+  cor(use = "pairwise.complete.obs")
+
+# Reshape the correlation matrix into a long format using pivot_longer
+cor_long_stream <- as.data.frame(cormat_stream) %>%
+  rownames_to_column(var = "Var1") %>%
+  pivot_longer(cols = -Var1, names_to = "Var2", values_to = "value")
+
+# Plot the heatmap
+ggplot(cor_long_stream, aes(Var1, Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "darkblue", high = "maroon", midpoint = 0, limit = c(-1, 1)) +
+  labs(title = "Correlation Matrix of Chemical Variables",
+       fill = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(df_stream_tall, aes(x = as.Date(SDATE, format = "%d-%b-%y"), y = Value)) +
+  geom_line(aes(group = 1)) +
+  facet_wrap(~ Chemical_Variables, scales = "free_y") +
+  labs(title = "Temporal Evolution of Chemical Concentrations", x = "Date") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+df_stream_tall_spatial <- df_stream_wide %>%
+  select(SDATE, SITECODE, where(is.numeric), -LCODE) %>%
+  pivot_longer(cols = -c(SDATE, SITECODE), names_to = "Chemical", values_to = "Value")
+
+ggplot(df_stream_tall_spatial, aes(x = SITECODE, y = Value)) +
+  geom_boxplot() +
+  facet_wrap(~ Chemical, scales = "free_y") +
+  labs(title = "Chemical Variables Concentrations by SITECODE") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+From the numerical summaries and visualisations, most chemical variables have a median close to 0 (except pH), and have many outliers.
+
+## Precipitation
+
+Similar as stream water
+
+## Soil solution
+
+Similar as stream water
